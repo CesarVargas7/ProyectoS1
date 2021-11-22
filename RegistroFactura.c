@@ -142,7 +142,6 @@ pideFecha:
 	}
 #endif // PRUEBA_CON_ARCHIVO
 
-	FlushConsoleInputBuffer(GetStdHandle(stdin));
 	return num;
 }
 
