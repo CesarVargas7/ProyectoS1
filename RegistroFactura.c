@@ -230,6 +230,7 @@ void DesplegarFactura(Factura f) {								//Se usa para imprimer la factura de u
 	printf("Nombre:    %s\n", f.nombreCliente);
 	printf("RFC:       %s\n", f.RFCcliente);
 	printf("Domicilio: %s\n", f.domicilio);
+	// Formato: https://www.delftstack.com/howto/c/printf-align-columns-in-c/
 	printf("Subtotal:  %10.2f\n", f.subtotal);
 	printf("IVA(%i %%): %10.2f\n", PORCENTAJE_IVA, f.IVA);
 	printf("Total:     %10.2f\n", f.total);
