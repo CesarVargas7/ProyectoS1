@@ -52,6 +52,14 @@ D.P. IVA = 10% */
 #define ENERO 1
 #define DICIEMBRE 12
 
+void LimpiaBuffer() {
+	// https://www.geeksforgeeks.org/clearing-the-input-buffer-in-cc/
+	char ch = 0;
+	do {
+		ch = getchar();
+	} while (ch != '\n' && ch != EOF);
+}
+
 int presentamenu(const char* opciones[OPCIONES_MENU]) {		//Imprime las opciones del menú principal
 	int entrada;
 	int entradavalida;
@@ -62,8 +70,9 @@ int presentamenu(const char* opciones[OPCIONES_MENU]) {		//Imprime las opciones 
 	entrada = 0;
 	entradavalida = 0;
 	do {
-		printf("Seleccione una opcion: \n");
+		printf("Seleccione una opcion: ");
 		scanf_s("%i", &entrada);
+		LimpiaBuffer();
 
 		// Valida la entrada de la opcion seleccionada
 		if (entrada >= 1 && entrada <= OPCIONES_MENU) {
@@ -100,6 +109,7 @@ int CapturaSegmento(int min, int max, char* nombreSegmento) {
 	// prueba
 	printf(" %s: ", nombreSegmento);
 	scanf_s("%i", &num);
+	LimpiaBuffer();	
 #else
 	char c;
 
@@ -114,24 +124,24 @@ pideFecha:
 			printf("%c", c);
 			segmento[len] = c;
 		}
-		else if (c == '\b') {
-			if (len) {
-				printf("\b");
-				segmento[len - 1] = 0;
-			}
+		else if (c == '\b' && len) {
+			// Backspace, desea corregir
+			printf("\b");
+			segmento[len - 1] = 0;
 		}
 		else {
-			printf("\a");
+			printf("\a"); // beep
 		}
 	} while (strlen(segmento) < TAMANIO_SEG_FECHA);
 
-	 num = atoi(segmento);
+	num = atoi(segmento);
 	if (num > max || num < min) {
 		printf("\nError. %s incorrecto (%i a %i)", nombreSegmento, min, max);
 		segmento[0] = segmento[1] = 0;
 		goto pideFecha;
 	}
 #endif // PRUEBA_CON_ARCHIVO
+
 	return num;
 }
 
@@ -167,7 +177,7 @@ int DiasDeMes(int mes, int anio) {		//Determina si el dia ingresado coincide con
 Fecha CapturaFecha() {				//Ingresa la fecha en que se emite la factura
 	Fecha fch = { 0 };
 
-	printf("Capture fecha(aa/mm/dd): ");
+	printf("Capture fecha(aa/mm/dd). ");
 
 	fch.anio = CapturaSegmento(0, 99, "anio");
 	fch.mes = CapturaSegmento(1, 12, "mes");
@@ -180,9 +190,24 @@ Fecha CapturaFecha() {				//Ingresa la fecha en que se emite la factura
 
 void SolicitaCampo(char* formato, char* nombre, void* valor, int bufer) {
 	printf("%s: ", nombre);
-	scanf_s(formato, valor, bufer);
-}
+	if (strcmp("%s", formato) == 0) {
+		// scanf no recibe espacios por defecto:
+		// https://stackoverflow.com/questions/1247989/how-do-you-allow-spaces-to-be-entered-using-scanf
+		/* obtener valor limitado al tamaño */
+		fgets(valor, bufer, stdin);
 
+		/* Quitar salto de línea si existe */
+		int lenCaptura = strlen(valor);
+		char *str = (char*)valor;
+		if ((lenCaptura > 0) && (str[lenCaptura - 1] == '\n'))
+			str[lenCaptura - 1] = '\0';
+		return;
+	}
+
+	// De otra manera, obtener el valor regular
+	scanf_s(formato, valor, bufer);
+	LimpiaBuffer();
+}
 Factura IngresarFactura(int numero)				//Se llenan los datos generales de la factura 
 {
 	Factura f;
@@ -199,13 +224,16 @@ Factura IngresarFactura(int numero)				//Se llenan los datos generales de la fac
 }
 
 void DesplegarFactura(Factura f) {								//Se usa para imprimer la factura de un mes determinado y de todas las facturas
-	printf("\nNumero:    %i\n", f.numero);
+	printf("\n");
+	printf("Numero:    %i\n", f.numero);
 	printf("Fecha:     %i/%i/%i\n", f.fecha.anio, f.fecha.mes, f.fecha.dia);
 	printf("Nombre:    %s\n", f.nombreCliente);
+	printf("RFC:       %s\n", f.RFCcliente);
 	printf("Domicilio: %s\n", f.domicilio);
-	printf("Subtotal:  %f\n", f.subtotal);
-	printf("IVA(%i %%): %f\n", PORCENTAJE_IVA, f.IVA);
-	printf("Total:  %f\n", f.total);
+	// Formato: https://www.delftstack.com/howto/c/printf-align-columns-in-c/
+	printf("Subtotal:  %10.2f\n", f.subtotal);
+	printf("IVA(%i %%): %10.2f\n", PORCENTAJE_IVA, f.IVA);
+	printf("Total:     %10.2f\n", f.total);
 }
 
 void ImprimirFacturas(Factura* facturas) {						//Imprime las facturas de un mes determinado
